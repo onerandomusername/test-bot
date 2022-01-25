@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import builtins
 import inspect
 import io
 import logging
@@ -199,6 +200,7 @@ class Admin(commands.Cog):
         }
 
         env.update(globals_to_import)
+        env.update(builtins.__dict__)
         code = self.cleanup_code(code)
         log.debug(f"body: {code}")
         stdout = io.StringIO()
