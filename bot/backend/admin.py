@@ -79,7 +79,7 @@ MESSAGE_LIMIT = 2000
 class Admin(commands.Cog):
     """Admin-only eval command and repr."""
 
-    def __init__(self, bot: Bot) -> Admin:
+    def __init__(self, bot: Bot):
         log.debug("loading cog Admin")
         self.bot = bot
         self._last_result = None
@@ -200,7 +200,7 @@ class Admin(commands.Cog):
         }
 
         env.update(globals_to_import)
-        env.update(builtins.__dict__)
+        env["__builtins__"] = builtins
         code = self.cleanup_code(code)
         log.debug(f"body: {code}")
         stdout = io.StringIO()
