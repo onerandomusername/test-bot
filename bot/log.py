@@ -74,7 +74,7 @@ def setup() -> None:
 
     root_logger.setLevel(logging.DEBUG)
     # Silence irrelevant loggers
-    logging.getLogger("disnake").setLevel(logging.ERROR)
+    logging.getLogger("disnake").setLevel(logging.WARNING)
     logging.getLogger("websockets").setLevel(logging.ERROR)
 
     _set_debug_loggers()
