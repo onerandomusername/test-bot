@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Optional, Tuple, Union
 import disnake
 from disnake.ext import commands
 from disnake.ext.commands import Context
+from disnake.http import Route
 
 
 DISCORD_UPLOAD_LIMIT = 800000
@@ -44,11 +45,13 @@ globals_to_import = {
     "sys": sys,
     "io": io,
     "asyncio": asyncio,
+    "Route": Route,
 }
 
 
 def create_file_obj(
     input: str,
+    *,
     encoding: str = "utf-8",
     name: str = "results",
     ext: str = "txt",
@@ -129,22 +132,25 @@ class Admin(commands.Cog):
 
     async def _send_stdout(
         self,
-        ctx: commands.Context,
+        ctx: Union[commands.Context, disnake.MessageInteraction],
         resp: str = None,
         error: Exception = None,
     ) -> None:
         """Send a nicely formatted eval response."""
+        send_kwargs = {}
+        if isinstance(ctx, commands.Context):
+            send_kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
         if resp is None and error is None:
-            return await ctx.send(
-                "No output.",
-                allowed_mentions=disnake.AllowedMentions(replied_user=False),
-                reference=ctx.message.to_reference(fail_if_not_exists=False),
-            )
+            if isinstance(ctx, commands.Context):
+                send_kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
+            await ctx.send("No output.", allowed_mentions=disnake.AllowedMentions(replied_user=False), **send_kwargs)
+            return
         resp_file: disnake.File = None
         # for now, we're not gonna handle exceptions as files
         # unless, for some reason, it has a ``` in it
         error_file: disnake.File = None
-        total_len = 0
+        resp_len = 0
+        error_len = 0
         fmt_resp: str = "```py\n{0}```"
         fmt_err: str = "\nAn error occured. Unfortunate.```py\n{0}```"
         out = ""
@@ -152,26 +158,30 @@ class Admin(commands.Cog):
 
         # make a resp object
         if resp is not None:
-            total_len += len(fmt_resp)
-            total_len += len(resp)
+            resp_len += len(fmt_resp)
+            resp_len += len(resp)
             if "```" in resp:
                 resp_file = True
 
         if error is not None:
-            total_len += len(fmt_err)
-            total_len += len(error)
-            if "```" in error:
+            error_len += len(fmt_err)
+            error_len += len(error)
+            if "```" in str(error):
                 error_file = True
 
-        if total_len > MESSAGE_LIMIT or resp_file:
+        if resp_len + error_len > MESSAGE_LIMIT or resp_file:
             log.debug("rats we gotta upload as a file")
+            if resp:
+                resp_file: disnake.File = create_file_obj(resp, ext="py")
 
-            resp_file: disnake.File = create_file_obj(resp, ext="py")
+            if error_len > 1000 and error:
+                error_file: disnake.File = create_file_obj(str(error), name="error", ext="py")
+
         else:
             # good job, not a file
             log.debug("sending response as plaintext")
             out += fmt_resp.format(resp) if resp is not None else ""
-        out += fmt_err.format(error) if error is not None else ""
+            out += fmt_err.format(error) if error is not None else ""
 
         for f in resp_file, error_file:
             if f is not None:
@@ -180,17 +190,22 @@ class Admin(commands.Cog):
             out,
             files=files,
             allowed_mentions=disnake.AllowedMentions(replied_user=False),
-            reference=ctx.message.to_reference(fail_if_not_exists=False),
+            **send_kwargs,
         )
 
     @commands.command(pass_context=True, hidden=True, name="ieval", aliases=["int_eval"])
-    async def _eval(self, ctx: commands.Context, *, code: str) -> None:
+    async def _eval(
+        self,
+        ctx: Union[commands.Context, disnake.MessageInteraction],
+        *,
+        code: str,
+        original_ctx: commands.Context = None,
+    ) -> None:
         """Evaluates provided code. Owner only."""
         log.debug("command _eval executed.")
 
         env = {
             "bot": self.bot,
-            "ctx": ctx,
             "channel": ctx.channel,
             "author": ctx.author,
             "guild": ctx.guild,
@@ -198,6 +213,11 @@ class Admin(commands.Cog):
             "pprint": pprint,
             "_": self._last_result,
         }
+        if isinstance(ctx, disnake.Interaction):
+            env["inter"] = ctx
+            env["ctx"] = original_ctx
+        else:
+            env["ctx"] = ctx
 
         env.update(globals_to_import)
         env["__builtins__"] = builtins
@@ -239,6 +259,32 @@ class Admin(commands.Cog):
             result = None
         self._last_result = result
         await self._send_stdout(ctx=ctx, resp=result, error=error)
+
+    @commands.command(name="inter-eval")
+    async def interaction_eval(self, ctx: commands.Context, *, code: str) -> None:
+        """Sends a message with a button to evaluate code."""
+        button = disnake.ui.Button(
+            label="Evaluate", style=disnake.ButtonStyle.green, custom_id="internal_interaction_eval"
+        )
+        msg = await ctx.send(
+            "Press the below button to evaluate this code in an interaction context.", components=button
+        )
+        try:
+            inter = await self.bot.wait_for(
+                "message_interaction",
+                check=lambda inter: inter.author == ctx.author
+                and inter.component.custom_id == "internal_interaction_eval",
+                timeout=20,
+            )
+        except asyncio.TimeoutError:
+            button.disabled = True
+            await msg.edit(components=button)
+            return
+
+        try:
+            await self._eval(inter, code=code, original_ctx=ctx)
+        finally:
+            await msg.edit(content=":ok_hand:", view=None)
 
     @commands.command(pass_context=True, hidden=True)
     async def repl(self, ctx: Context) -> None:
