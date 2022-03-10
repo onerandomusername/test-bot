@@ -54,9 +54,16 @@ class Bot(commands.Bot):
         log.info(f"Cog loaded: {cog.qualified_name}")
 
 
+_intents = disnake.Intents.none()
+_intents.guilds = True
+_intents.messages = True
+
+if hasattr(_intents, "message_content"):
+    _intents.message_content = True
+
 bot = Bot(
     command_prefix=os.environ.get("PREFIX", "="),
     activity=disnake.Game(name=f"Testing: {disnake.__version__}"),
     allowed_mentions=disnake.AllowedMentions.all(),
-    intents=disnake.Intents.all(),
+    intents=_intents,
 )
