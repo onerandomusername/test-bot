@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from bot import log
@@ -18,8 +19,8 @@ dotenv.load_dotenv(override=True)
 
 
 log.setup()
+logging.captureWarnings(True)
 
-# Set timestamp of when execution started (approximately)
 
 # On Windows, the selector event loop is required for aiodns.
 if os.name == "nt":
