@@ -193,7 +193,7 @@ class Admin(commands.Cog):
             **send_kwargs,
         )
 
-    @commands.command(pass_context=True, hidden=True, name="ieval", aliases=["int_eval"])
+    @commands.command(hidden=True, name="ieval")
     async def _eval(
         self,
         ctx: Union[commands.Context, disnake.MessageInteraction],
@@ -286,7 +286,7 @@ class Admin(commands.Cog):
         finally:
             await msg.edit(content=":ok_hand:", view=None)
 
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     async def repl(self, ctx: Context) -> None:
         """Launches an interactive REPL session."""
         variables = {
@@ -306,6 +306,7 @@ class Admin(commands.Cog):
         self.sessions.add(ctx.channel.id)
         await ctx.send("Enter code to execute or evaluate. `exit()` or `quit` to exit.")
 
+        @ctx.channel.typing()
         def check(m: Message) -> bool:
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id and m.content.startswith("`")
 
