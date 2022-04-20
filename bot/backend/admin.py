@@ -32,6 +32,8 @@ from disnake.ext import commands
 from disnake.ext.commands import Context
 from disnake.http import Route
 
+from bot.utils.views import DeleteView
+
 
 DISCORD_UPLOAD_LIMIT = 800000
 
@@ -138,12 +140,14 @@ class Admin(commands.Cog):
     ) -> None:
         """Send a nicely formatted eval response."""
         send_kwargs = {}
+        send_kwargs["view"] = DeleteView(ctx.author)
+        send_kwargs["allowed_mentions"] = disnake.AllowedMentions(replied_user=False)
         if isinstance(ctx, commands.Context):
             send_kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
         if resp is None and error is None:
             if isinstance(ctx, commands.Context):
                 send_kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
-            await ctx.send("No output.", allowed_mentions=disnake.AllowedMentions(replied_user=False), **send_kwargs)
+            await ctx.send("No output.", **send_kwargs)
             return
         resp_file: disnake.File = None
         # for now, we're not gonna handle exceptions as files
@@ -189,7 +193,6 @@ class Admin(commands.Cog):
         await ctx.send(
             out,
             files=files,
-            allowed_mentions=disnake.AllowedMentions(replied_user=False),
             **send_kwargs,
         )
 
@@ -306,7 +309,6 @@ class Admin(commands.Cog):
         self.sessions.add(ctx.channel.id)
         await ctx.send("Enter code to execute or evaluate. `exit()` or `quit` to exit.")
 
-        @ctx.channel.typing()
         def check(m: Message) -> bool:
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id and m.content.startswith("`")
 
@@ -328,7 +330,8 @@ class Admin(commands.Cog):
             try:
                 code = compile(cleaned, "<repl session>", "exec")
             except SyntaxError as e:
-                await ctx.send(self.get_syntax_error(e))
+                view = DeleteView(ctx.author)
+                await ctx.send(self.get_syntax_error(e), view=view)
                 stop = True
         return executor, code, stop
 
@@ -366,16 +369,19 @@ class Admin(commands.Cog):
                     variables["_"] = result
                 elif value:
                     fmt = f"```py\n{value}\n```"
+
+            view = DeleteView(ctx.author)
             try:
                 if fmt is not None:
                     if len(fmt) > MESSAGE_LIMIT:
-                        await ctx.send("Content too big to be printed.")
+
+                        await ctx.send("Content too big to be printed.", view=view)
                     else:
-                        await ctx.send(fmt)
+                        await ctx.send(fmt, view=view)
             except disnake.Forbidden:
                 pass
             except disnake.HTTPException as e:
-                await ctx.send(f"Unexpected error: `{e}`")
+                await ctx.send(f"Unexpected error: `{e}`", view=view)
 
 
 def setup(bot: Bot) -> None:
