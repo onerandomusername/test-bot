@@ -105,6 +105,7 @@ class ErrorHandler(commands.Cog, name="Error Handler"):
         return embed
 
     @commands.Cog.listener()
+    @commands.Cog.listener("on_slash_command_error")
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         """Activates when a command raises an error."""
         if getattr(error, "handled", False):

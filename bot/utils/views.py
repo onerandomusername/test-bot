@@ -40,10 +40,3 @@ class DeleteView(disnake.ui.View):
     async def delete_button(self, button: disnake.ui.Button, inter: disnake.MessageInteraction) -> None:
         """Delete a message when a button is pressed if the user is okay to delete it."""
         await asyncio.sleep(3)
-
-    async def on_timeout(self) -> None:
-        from bot.bot import bot
-
-        print("timedout")
-        print("views", len(bot._connection._view_store._views))
-        print("synced views", len(bot._connection._view_store._synced_message_views))
