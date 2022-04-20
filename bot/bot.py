@@ -53,13 +53,27 @@ class Bot(commands.Bot):
         super().add_cog(cog)
         log.info(f"Cog loaded: {cog.qualified_name}")
 
+    async def login(self, token: str) -> None:
+        """Login to discord and set the intents."""
+        await super().login(token)
+        info = await self.application_info()
+        flags = info.flags
+        if flags:
+            intents = self._real_intents
+            intents.members = flags.gateway_guild_members or flags.gateway_guild_members_limited
+            intents.presences = flags.gateway_presence or flags.gateway_presence_limited
+            if hasattr(intents, "message_content"):
+                intents.message_content = flags.gateway_message_content or flags.gateway_message_content_limited
 
-_intents = disnake.Intents.none()
-_intents.guilds = True
-_intents.messages = True
+        if hasattr(self, "session_start_limit"):
+            print(self.session_start_limit)
 
-if hasattr(_intents, "message_content"):
-    _intents.message_content = True
+    @property
+    def _real_intents(self) -> disnake.Intents:
+        return self._connection._intents
+
+
+_intents = disnake.Intents.all()
 
 bot = Bot(
     command_prefix=os.environ.get("PREFIX", "="),
