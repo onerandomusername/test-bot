@@ -40,6 +40,9 @@ class Bot(commands.Bot):
         folder = f"bot/{og_folder}"
         for name in os.listdir(folder):
             if name.endswith(".py") and os.path.isfile(f"{folder}/{name}"):
+                if name.startswith("_"):
+                    # ignore all files that start with _
+                    continue
                 self.load_extension(f"{py_path}.{name[:-3]}")
 
         log.info(f"Completed loading extensions from {folder}.")
