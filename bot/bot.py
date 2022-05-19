@@ -1,6 +1,8 @@
+import collections
 import logging
 import os
 
+import arrow
 import disnake
 from disnake.ext import commands
 
@@ -26,6 +28,8 @@ class Bot(commands.Bot):
             kwargs["test_guilds"] = TEST_GUILDS
             log.info("registering as test_guilds")
         super().__init__(**kwargs)
+        self.socket_events = collections.Counter()
+        self.start_time: arrow.Arrow = arrow.utcnow()
 
     def load_backend_extensions(
         self,
@@ -68,6 +72,9 @@ class Bot(commands.Bot):
             if hasattr(intents, "message_content"):
                 intents.message_content = flags.gateway_message_content or flags.gateway_message_content_limited
 
+            self._connection.member_cache_flags = disnake.MemberCacheFlags.from_intents(intents)
+            self._connection._chunk_guilds = intents.members
+
         if hasattr(self, "session_start_limit"):
             print(self.session_start_limit)
 
@@ -76,11 +83,16 @@ class Bot(commands.Bot):
         return self._connection._intents
 
 
-_intents = disnake.Intents.all()
+_intents = disnake.Intents.default()
+if hasattr(_intents, "message_content"):
+    _intents.message_content = True
 
 bot = Bot(
     command_prefix=os.environ.get("PREFIX", "="),
     activity=disnake.Game(name=f"Testing: {disnake.__version__}"),
     allowed_mentions=disnake.AllowedMentions.all(),
     intents=_intents,
+    sync_commands_debug=True,
+    sync_permissions=True,
+    sync_commands=False,
 )

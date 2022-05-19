@@ -32,8 +32,8 @@ def _set_debug_loggers() -> None:
 
         if level_filter.startswith("!"):
             logging.getLogger().setLevel(logging.DEBUG)
-            for logger_name in level_filter.strip("!,").split(","):
-                logging.getLogger(logger_name).setLevel(logging.DEBUG)
+            for logger_name in level_filter.strip("!, ").split(","):
+                logging.getLogger(logger_name.strip()).setLevel(logging.DEBUG)
 
         else:
             for logger_name in level_filter.strip().split(","):
@@ -53,7 +53,7 @@ def setup() -> None:
     # File handler rotates logs every 5 MB
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
-        maxBytes=5 * (2 ** 20),
+        maxBytes=5 * (2**20),
         backupCount=10,
         encoding="utf-8",
     )
