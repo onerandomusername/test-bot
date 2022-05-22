@@ -75,12 +75,12 @@ class Bot(commands.Bot):
             self._connection.member_cache_flags = disnake.MemberCacheFlags.from_intents(intents)
             self._connection._chunk_guilds = intents.members
 
-        if hasattr(self, "session_start_limit"):
-            print(self.session_start_limit)
-
     @property
     def _real_intents(self) -> disnake.Intents:
         return self._connection._intents
+
+    async def on_connect(self):
+        print(self.session_start_limit)
 
 
 _intents = disnake.Intents.default()
