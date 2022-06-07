@@ -7,7 +7,7 @@ import disnake
 from disnake.ext import commands
 
 from bot.bot import Bot
-from bot.utils.views import DeleteView
+from bot.utils.messages import DeleteButton
 
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ class GatewayLogger(commands.Cog):
         for event, count in events_and_count.items():
             embed.description += f"`{event:<{longest_length+1}}`: `{count:>4,}`\n"
 
-        view = DeleteView(ctx.author, allow_manage_messages=False)
-        await ctx.send(embed=embed, view=view)
+        components = DeleteButton(ctx.author, allow_manage_messages=False)
+        await ctx.send(embed=embed, components=components)
 
     @commands.command(aliases=("gw",))
     async def gateway(self, ctx: commands.Context, *events: str) -> None:
@@ -64,8 +64,8 @@ class GatewayLogger(commands.Cog):
         for event_type, count in self.bot.socket_events.most_common(25):
             embed.add_field(name=event_type, value=f"{count:,}", inline=True)
 
-        view = DeleteView(ctx.author, allow_manage_messages=False)
-        await ctx.send(embed=embed, view=view)
+        components = DeleteButton(ctx.author, allow_manage_messages=False)
+        await ctx.send(embed=embed, components=components)
 
 
 def setup(bot: Bot) -> None:

@@ -32,7 +32,7 @@ from disnake.ext import commands
 from disnake.ext.commands import Context
 from disnake.http import Route
 
-from bot.utils.views import DeleteView
+from bot.utils.messages import DeleteButton
 
 
 DISCORD_UPLOAD_LIMIT = 800000
@@ -140,7 +140,7 @@ class Admin(commands.Cog):
     ) -> None:
         """Send a nicely formatted eval response."""
         send_kwargs = {}
-        send_kwargs["view"] = DeleteView(ctx.author)
+        send_kwargs["components"] = DeleteButton(ctx.author)
         send_kwargs["allowed_mentions"] = disnake.AllowedMentions(replied_user=False)
         if isinstance(ctx, commands.Context):
             send_kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
@@ -330,8 +330,8 @@ class Admin(commands.Cog):
             try:
                 code = compile(cleaned, "<repl session>", "exec")
             except SyntaxError as e:
-                view = DeleteView(ctx.author)
-                await ctx.send(self.get_syntax_error(e), view=view)
+                components = DeleteButton(ctx.author)
+                await ctx.send(self.get_syntax_error(e), components=components)
                 stop = True
         return executor, code, stop
 
@@ -370,18 +370,18 @@ class Admin(commands.Cog):
                 elif value:
                     fmt = f"```py\n{value}\n```"
 
-            view = DeleteView(ctx.author)
+            components = DeleteButton(ctx.author)
             try:
                 if fmt is not None:
                     if len(fmt) > MESSAGE_LIMIT:
 
-                        await ctx.send("Content too big to be printed.", view=view)
+                        await ctx.send("Content too big to be printed.", components=components)
                     else:
-                        await ctx.send(fmt, view=view)
+                        await ctx.send(fmt, components=components)
             except disnake.Forbidden:
                 pass
             except disnake.HTTPException as e:
-                await ctx.send(f"Unexpected error: `{e}`", view=view)
+                await ctx.send(f"Unexpected error: `{e}`", components=components)
 
 
 def setup(bot: Bot) -> None:

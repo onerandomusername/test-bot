@@ -1,9 +1,8 @@
 import disnake
 from disnake.ext import commands
-from disnake.ui import View
 
 from bot.bot import Bot
-from bot.utils.views import DELETE_ID_V2
+from bot.utils.messages import DELETE_ID_V2
 
 
 VIEW_DELETE_ID_V1 = "wait_for_deletion_interaction_trash"
@@ -46,24 +45,6 @@ class DeleteManager(commands.Cog):
         else:
             await inter.response.defer()
             await inter.delete_original_message()
-
-    @commands.Cog.listener("on_button_click")
-    async def handle_v1_buttons(self, inter: disnake.MessageInteraction) -> None:
-        """Handle old, legacy, buggy v1 deletion buttons that still may exist."""
-        if inter.component.custom_id != VIEW_DELETE_ID_V1:
-            return
-
-        view = View.from_message(inter.message)
-        # get the button from the view
-        for comp in view.children:
-            if VIEW_DELETE_ID_V1 == getattr(comp, "custom_id", None):
-                break
-        else:
-            raise RuntimeError("view doesn't contain the button that was clicked.")
-
-        comp.disabled = True
-        await inter.response.edit_message(view=view)
-        await inter.followup.send("This button no longer works lol.")
 
 
 def setup(bot: Bot) -> None:
