@@ -105,7 +105,7 @@ if hasattr(_intents, "message_content"):
     _intents.message_content = True
 
 bot = Bot(
-    command_prefix=os.environ.get("PREFIX", "="),
+    command_prefix=commands.when_mentioned_or(os.environ.get("PREFIX", "=")),
     activity=disnake.Game(name=f"Testing: {disnake.__version__}"),
     allowed_mentions=disnake.AllowedMentions.all(),
     intents=_intents,
