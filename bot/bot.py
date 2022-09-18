@@ -112,7 +112,7 @@ else:
 kwargs["allow_extraneous_arguments"] = True
 
 if hasattr(disnake, "GatewayParams"):
-    kwargs["gateway_params"] = disnake.GatewayParams(zlib=False)
+    kwargs["gateway_params"] = disnake.GatewayParams(zlib=True)
 
 bot = Bot(
     command_prefix=commands.when_mentioned_or(os.environ.get("PREFIX", "=")),
