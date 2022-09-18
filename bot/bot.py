@@ -1,4 +1,5 @@
 import collections
+import inspect
 import logging
 import os
 
@@ -27,7 +28,22 @@ class Bot(commands.Bot):
         if TEST_GUILDS:
             kwargs["test_guilds"] = TEST_GUILDS
             log.info("registering as test_guilds")
+
+        # due to disnake#371, pop all kwargs that aren't received by the super
+        if kwargs.pop("allow_extraneous_arguments", False) is True:
+            all_params = set()
+            for cls in self.__class__.__mro__:
+                if not hasattr(cls, "__init__"):
+                    continue
+                sig = inspect.signature(cls.__init__)
+                all_params.update(
+                    name
+                    for name, param in sig.parameters.items()
+                    if param.kind in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                )
+            kwargs = {k: v for k, v in kwargs.items() if k in all_params}
         super().__init__(**kwargs)
+
         self.socket_events = collections.Counter()
         self.start_time: arrow.Arrow = arrow.utcnow()
 
