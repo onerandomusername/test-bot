@@ -35,16 +35,15 @@ class DeleteManager(commands.Cog):
         # check if the user id is the allowed user OR check if the user has any of the permissions allowed
         if inter.author.id != user_id:
             permissions = disnake.Permissions(perms)
-            user_permissions = inter.channel.permissions_for(inter.author)
-            if not permissions.value & user_permissions.value:
+            if not permissions.value & inter.permissions.value:
                 await inter.response.send_message("Sorry, this delete button is not for you!", ephemeral=True)
                 return
 
-        if inter.channel.permissions_for(inter.guild.me).read_message_history:
+        if inter.app_permissions.read_message_history:
             await inter.message.delete()
         else:
             await inter.response.defer()
-            await inter.delete_original_message()
+            await inter.delete_original_response()
 
 
 def setup(bot: Bot) -> None:
