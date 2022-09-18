@@ -100,16 +100,24 @@ class Bot(commands.Bot):
         print(self.session_start_limit)
 
 
-_intents = disnake.Intents.default()
-if hasattr(_intents, "message_content"):
-    _intents.message_content = True
+_intents = disnake.Intents.all()
+# _intents.message_content = False
+
+kwargs = {}
+if hasattr(disnake, "ApplicationCommandSyncFlags"):
+    kwargs["command_sync"] = commands.ApplicationCommandSyncFlags.all()
+else:
+    kwargs["sync_commands_debug"] = True
+    kwargs["sync_commands"] = True
+kwargs["allow_extraneous_arguments"] = True
+
+if hasattr(disnake, "GatewayParams"):
+    kwargs["gateway_params"] = disnake.GatewayParams(zlib=False)
 
 bot = Bot(
     command_prefix=commands.when_mentioned_or(os.environ.get("PREFIX", "=")),
     activity=disnake.Game(name=f"Testing: {disnake.__version__}"),
     allowed_mentions=disnake.AllowedMentions.all(),
     intents=_intents,
-    sync_commands_debug=True,
-    sync_permissions=True,
-    sync_commands=False,
+    **kwargs,
 )
