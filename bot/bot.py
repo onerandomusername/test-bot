@@ -95,7 +95,8 @@ class Bot(commands.Bot):
     def _real_intents(self) -> disnake.Intents:
         return self._connection._intents
 
-    async def on_connect(self):
+    async def on_connect(self) -> None:
+        """Print the session start limit on connection."""
         print(self.session_start_limit)
 
 
