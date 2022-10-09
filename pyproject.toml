@@ -14,6 +14,7 @@ aiohttp = "~=3.8.1"
 colorama = { version = "~=0.4.3", markers = "sys_platform == 'win32'" }
 coloredlogs = "~=14.0"
 disnake = {git = "https://github.com/DisnakeDev/disnake", rev='master'}
+arrow = "^1.2.3"
 
 
 [tool.poetry.dev-dependencies]
